@@ -6,3 +6,6 @@ Before running the code, we have to replace the paths for the template image and
 The steps involved in the assignment to find the orientation of the object in the image are given in the 'Mowito_Assignment.pdf'.
 
 ![image](https://github.com/git-tarunkp/Assignment_for_mowito/assets/108211464/d71f936b-bf88-414b-a609-6a87964f6200)
+
+![image](https://github.com/git-tarunkp/Assignment_for_mowito/assets/108211464/d8094d9f-2d84-4c80-9a9b-7f19b02e7815)
+
