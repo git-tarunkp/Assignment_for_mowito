@@ -1,0 +1,137 @@
+import os
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+from matplotlib.patches import Circle
+
+def calculate_orientation(img):
+
+    gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+   
+    binary_image = gray_image.copy()
+    binary_image[binary_image <= 180] = 0
+    binary_image[binary_image > 180] = 255
+
+    height, width, _ = img.shape
+
+    white_pixels = np.where(binary_image == 255)
+    min_x = np.min(white_pixels[1])
+    max_x = np.max(white_pixels[1])
+    min_y = np.min(white_pixels[0])
+    max_y = np.max(white_pixels[0])
+
+    center_x = (min_x + max_x) / 2
+    center_y = (min_y + max_y) / 2
+    diagonal_length = np.sqrt((max_x - min_x)**2 + (max_y - min_y)**2)
+
+    radius = 150
+
+    # here I find the the more accurate center for the image 
+    
+    darkest_intensity = 255  
+    darkest_point = None     
+    for x in range(int(center_x - radius), int(center_x + radius)):
+        for y in range(int(center_y - radius), int(center_y + radius)):
+           
+            if (x - center_x) ** 2 + (y - center_y) ** 2 <= radius ** 2:
+                intensity = gray_image[y, x] 
+                if intensity < darkest_intensity:
+                    darkest_intensity = intensity
+                    darkest_point = (x, y)
+
+    height, width, _ = img.shape
+    intensities = []
+    radius2=370
+
+   
+    for angle in range(0, 360):
+        
+        x = int(darkest_point[0] + radius2 * np.cos(np.radians(angle)))
+        y = int(darkest_point[1] + radius2 * np.sin(np.radians(angle)))
+
+        
+        x = max(0, min(x, width - 1))
+        y = max(0, min(y, height - 1))
+
+        
+        intensity = gray_image[y, x]
+        intensities.append((x, y, intensity))
+
+   
+    intensities.sort(key=lambda x: x[2], reverse=True)
+
+    
+    top_points = intensities[:100]  
+
+    
+    mean_x = np.mean([point[0] for point in top_points])
+    mean_y = np.mean([point[1] for point in top_points])
+    xc,yc=darkest_point
+
+    
+    # here I find the the line denoting the orientation of the object in the image
+    
+    slope = (mean_y - yc) / (mean_x - xc)
+    intercept = mean_y - slope * mean_x
+
+    
+    extended_line_length = 300  
+    x_start = mean_x - extended_line_length
+    x_end = xc + extended_line_length
+    y_start = slope * x_start + intercept
+    y_end = slope * x_end + intercept
+    
+    
+    
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.xlim(0, width)
+    plt.ylim(height, 0)  
+    circle = Circle(darkest_point, 420, linewidth=2, edgecolor='r', facecolor='none')
+    plt.gca().add_patch(circle)
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Red circle denoting the place of object in Image')
+
+    plt.show()
+    
+    
+   
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.xlim(0, width)
+    plt.ylim(height, 0)  
+    circle = Circle(darkest_point, radius, linewidth=1, edgecolor='r', facecolor='none')
+    plt.gca().add_patch(circle)
+    plt.scatter([point[0] for point in top_points], [point[1] for point in top_points], c='g', s=50, marker='o')
+    plt.scatter(mean_x, mean_y, c='b', s=100, marker='x')
+
+    plt.plot([x_start, x_end], [y_start, y_end], c='b', linestyle='-', linewidth=2) 
+
+
+    plt.scatter(xc,yc, c='b', s=100, marker='x')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Blue line telling the orientation of image')
+    plt.show()
+
+    angle_rad = np.arctan2(mean_y-yc, mean_x-xc)
+    angle_deg = np.degrees(angle_rad) % 360
+
+    print()
+    print("Coordinates of Center of Circle", darkest_point)
+    print()
+    print("Angle between the line and x-axis:", angle_deg)
+     
+    return angle_deg
+
+
+img_template = cv2.imread("downloads/template_image1.jpg")
+
+img_test = cv2.imread("downloads/test_image1.jpg")
+
+angle_template= calculate_orientation(img_template)
+angle_test= calculate_orientation(img_test)
+print()
+print()
+print()
+print("Orientation angle between test and template image is Approx ",angle_template-angle_test)
